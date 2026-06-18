@@ -1,0 +1,50 @@
+export const SinglePigLanding = Object.freeze({
+  FLANC: 'FLANC',
+  TROTTEUR: 'TROTTEUR',
+  TOURNEDOS: 'TOURNEDOS',
+  GROIN_GROIN: 'GROIN_GROIN',
+  BAJOUE: 'BAJOUE',
+});
+
+export const FlankSide = Object.freeze({
+  DROIT: 'DROIT',
+  GAUCHE: 'GAUCHE',
+});
+
+export const RollEffect = Object.freeze({
+  GAIN_POINTS: 'GAIN_POINTS',
+  PERTE_TOUR: 'PERTE_TOUR',
+  PERTE_TOTALE: 'PERTE_TOTALE',
+  ELIMINATION: 'ELIMINATION',
+});
+
+export const GamePhase = Object.freeze({
+  SETUP: 'SETUP',
+  PLAYING: 'PLAYING',
+  GAME_OVER: 'GAME_OVER',
+});
+
+export const TurnPhase = Object.freeze({
+  ROLLING: 'ROLLING',
+  DECIDING: 'DECIDING',
+  TURN_OVER: 'TURN_OVER',
+});
+
+export const RollResultType = Object.freeze({
+  SOMME: 'SOMME',
+  BON_FLANC: 'BON_FLANC',
+  DOUBLE_TROTTEUR: 'DOUBLE_TROTTEUR',
+  DOUBLE_TOURNEDOS: 'DOUBLE_TOURNEDOS',
+  DOUBLE_GROIN_GROIN: 'DOUBLE_GROIN_GROIN',
+  DOUBLE_BAJOUE: 'DOUBLE_BAJOUE',
+  COCHON_NUL: 'COCHON_NUL',
+  BON_JAMBON: 'BON_JAMBON',
+  COCHON_A_CHEVAL: 'COCHON_A_CHEVAL',
+});
+
+export const ActionType = Object.freeze({
+  ROLL_REQUESTED: 'ROLL_REQUESTED',
+  ANIMATION_COMPLETED: 'ANIMATION_COMPLETED',
+  BANK_REQUESTED: 'BANK_REQUESTED',
+  SKIP_ANIMATION: 'SKIP_ANIMATION',
+});

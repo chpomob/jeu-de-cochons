@@ -1,0 +1,117 @@
+{
+  "findings": [
+    {
+      "id": "B1",
+      "severity": "major",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 137,
+      "category": "bug",
+      "title": "Probabilités de flanc incohérentes : double comptage de 12,25%",
+      "description": "La section 2.1 fixe la probabilité d'un cochon sur le Flanc à 35%. Avec deux cochons indépendants, P(les deux sur flanc) = 0.35^2 = 0.1225 = 12,25%. Or la section 2.2 attribue 12,25% à 'Bon Flanc (même flanc)' ET 12,25% à 'Cochon Nul (flancs opposés)', soit 24,5% au total pour 'les deux sur flanc'. C'est le double de la valeur réelle. Pour que 0.35^2 = 0.245, il faudrait P(flanc seul) = 0.495, ce qui contredit les 35%. La table somme à 100% uniquement parce que cette erreur gonfle artificiellement le total flanc et écrase la part de 'Somme'.",
+      "suggestion": "P(deux flancs) = 12,25% doit être RÉPARTI entre même côté et côtés opposés. Si les deux côtés (droit/gauche) sont équiprobables : Bon Flanc = 6,125% et Cochon Nul = 6,125%. Recalculer ensuite 'Somme' = 1 - (doubles + deux-flancs)."
+    },
+    {
+      "id": "B2",
+      "severity": "major",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 138,
+      "category": "bug",
+      "title": "Probabilité 'Somme' erronée (63,49% au lieu de ~75,74%)",
+      "description": "Conséquence de B1. La probabilité réelle des combinaisons non-spéciales est 1 - P(double trotteur 4,84% + double tournedos 4,84% + double groin 1,69% + double bajoue 0,64% + deux flancs 12,25%) = 1 - 0,2426 = 0,7574 = 75,74%. La valeur 63,49% du plan découle directement du double comptage des flancs (24,5%). Toute l'espérance mathématique de la section 2.3 (points moyens ~9,5, catastrophe 15,55%, seuil optimal 18-22) repose sur ces chiffres faux.",
+      "suggestion": "Recalculer Somme à ~75,74% puis re-dériver l'espérance et le taux de catastrophe. Mieux : générer la table de probas par simulation Monte-Carlo à partir des poids unitaires de 2.1 pour garantir la cohérence, plutôt que de la maintenir à la main."
+    },
+    {
+      "id": "B3",
+      "severity": "major",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 130,
+      "category": "edge_case",
+      "title": "Valeurs de points des positions individuelles jamais spécifiées",
+      "description": "La section 2.2 annonce 'Somme (toute autre) : Variable (2-30)' et computeScore() (section 1.4) doit calculer les points. Or aucune valeur de points par position simple (Flanc, Trotteur, Tournedos, Groin groin, Bajoue) n'est définie nulle part dans le plan. Sans ces constantes, computeScore() et la 'somme des points' sont non implémentables, et les valeurs des doubles (Double Bajoue=60, Double Groin=40, etc.) ne peuvent être vérifiées comme cohérentes avec 2× la valeur simple.",
+      "suggestion": "Ajouter une table explicite des points par position dans config.js (ex. Trotteur, Tournedos, Groin groin, Bajoue) et vérifier que chaque double = règle attendue. Documenter aussi le point de Flanc (0 ?) pour le calcul de Somme."
+    },
+    {
+      "id": "B4",
+      "severity": "major",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 359,
+      "category": "bug",
+      "title": "Contradiction sur Bon Jambon : perte de tour vs score négatif",
+      "description": "La machine d'états (section 1.3) traite RESULT_BON_JAMBON comme une catastrophe menant à NEXT_PLAYER (perte du tour, donc 0 point). Mais la section 6.1 liste 'Score négatif (Jambon) → Math.max(0, score)', ce qui suppose que Jambon produit un score numérique potentiellement négatif. Les deux interprétations sont incompatibles : soit Jambon fait perdre le tour (aucun calcul de score), soit il applique une valeur. De plus la section 2.2 ne donne aucune valeur de points pour Bon Jambon ('Effet : cochons se touchent', sans points).",
+      "suggestion": "Trancher la sémantique de Bon Jambon : définir explicitement s'il annule le tour (turnScore → 0) ou attribue/retire des points, et supprimer la garde Math.max(0) si elle n'a pas de source de score négatif. Aligner section 1.3, 2.2 et 6.1."
+    },
+    {
+      "id": "B5",
+      "severity": "minor",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 145,
+      "category": "edge_case",
+      "title": "Overrides Jambon/Cheval non renormalisés sur la table de combinaisons",
+      "description": "Les overrides Bon Jambon (2,5%) et Cochon à Cheval (0,8%) sont appliqués APRÈS le tirage des positions (section 2.2 : 'positions → si Jambon → override'). Mécaniquement, un tirage 'Double Bajoue' (0,64%) peut être écrasé en Jambon ou Cheval, ce qui réduit la probabilité effective de chaque combinaison listée. La table 2.2 ne tient pas compte de cette soustraction et ne se renormalise pas, donc les probabilités affichées des combinaisons sont surévaluées par rapport à la distribution réelle après overrides.",
+      "suggestion": "Soit appliquer les overrides AVANT et soustraire 3,3% proportionnellement des combinaisons, soit documenter explicitement que les probas de 2.2 sont 'avant override' et fournir une seconde table 'après override'. Le test de calibration (7.8) doit valider la distribution finale, pas la pré-override."
+    },
+    {
+      "id": "B6",
+      "severity": "minor",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 268,
+      "category": "edge_case",
+      "title": "nextPlayer() : risque de boucle infinie si tous éliminés",
+      "description": "nextPlayer() (1.4) 'trouve le prochain joueur non éliminé'. Si, par un bug d'ordonnancement, isGameOver()/checkVictory() n'est pas appelé avant nextPlayer() après une élimination par Cochon à Cheval, et que plus aucun joueur non éliminé n'existe, une recherche circulaire du prochain joueur peut boucler indéfiniment. Le plan place bien checkVictory() après chaque élimination (6.1) mais ne prévoit aucune garde défensive dans nextPlayer() lui-même.",
+      "suggestion": "Ajouter une garde : si le nombre de joueurs non éliminés ≤ 1, nextPlayer() doit retourner null / déclencher GAME_OVER au lieu de chercher. Limiter l'itération à players.length pour éviter toute boucle infinie."
+    },
+    {
+      "id": "B7",
+      "severity": "minor",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 360,
+      "category": "edge_case",
+      "title": "Devenir du turnScore lors d'une élimination (Cochon à Cheval) non spécifié",
+      "description": "Le Cochon à Cheval élimine le joueur (1.3) mais le plan ne précise pas ce qu'il advient du turnScore accumulé ni si un joueur éliminé qui avait déjà ≥100 sécurisés est néanmoins retiré. De même, l'interaction entre 'éliminé' et 'gagnant potentiel' n'est pas définie (un joueur à 95 pts éliminé alors qu'il restait deux joueurs).",
+      "suggestion": "Spécifier : à l'élimination, turnScore est défaussé (non banké) et le joueur est marqué isEliminated. Documenter la priorité entre condition de victoire (≥100) et élimination dans le même tour."
+    },
+    {
+      "id": "B8",
+      "severity": "minor",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 36,
+      "category": "quality",
+      "title": "Incohérence entre les enums de phase et la machine d'états",
+      "description": "TurnState.phase n'autorise que 'ROLLING' | 'DECIDING' | 'TURN_OVER' et GameState.phase 'SETUP' | 'PLAYING' | 'GAME_OVER', mais la machine d'états (1.3) introduit de nombreux états supplémentaires non modélisés : PLAYER_TURN_START, NEXT_PLAYER, RESULT_COCHON_NUL, RESULT_BON_JAMBON, RESULT_COCHON_A_CHEVAL, CHECK_VICTORY. Cette divergence laissera l'implémentation décider de façon ad hoc comment représenter ces transitions, source d'états incohérents.",
+      "suggestion": "Réconcilier le diagramme d'états avec les enums : soit étendre les enums pour couvrir tous les états atteignables, soit clarifier lesquels sont des états persistants vs des transitions transitoires."
+    },
+    {
+      "id": "B9",
+      "severity": "minor",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 235,
+      "category": "testing",
+      "title": "1000 lancés statistiquement insuffisants pour valider la calibration des probas",
+      "description": "Le critère de performance 7.4 (1000 lancés < 100ms) est raisonnable, mais aucun test de calibration à fort volume n'est prévu. Valider une distribution comportant des événements à ~0,64% (Double Bajoue) ou 0,8% (Cheval) exige des centaines de milliers de tirages. Avec 1000 lancés seulement, des erreurs comme B1/B2 (double comptage des flancs) passeraient inaperçues.",
+      "suggestion": "Préciser un test de calibration à fort volume (≥1e6 tirages) avec RNG seedé et tolérance statistique explicite, distinct du benchmark de performance. C'est ce test qui aurait détecté le double comptage des flancs."
+    },
+    {
+      "id": "B10",
+      "severity": "nit",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 187,
+      "category": "quality",
+      "title": "flankSide retourné pour des positions où il n'a pas de sens",
+      "description": "rollSinglePig() retourne {landing, flankSide} (1.4) mais flankSide n'a de signification que pour landing === 'FLANC'. Pour Trotteur/Tournedos/Groin/Bajoue, flankSide sera une valeur parasite (undefined ou aléatoire) susceptible d'être lue par erreur en aval (ex. evaluateRoll).",
+      "suggestion": "Retourner flankSide = null pour toute position non-FLANC et l'asserter dans evaluateRoll(), ou faire de flankSide un champ optionnel documenté comme défini ssi landing==='FLANC'."
+    },
+    {
+      "id": "B11",
+      "severity": "nit",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 33,
+      "category": "quality",
+      "title": "Champ canRoll redondant avec phase TURN_OVER",
+      "description": "TurnState.canRoll est décrit 'false si le joueur vient de subir CochonNul/Jambon/Cheval'. Or ces trois cas mènent tous à la fin du tour (TURN_OVER / NEXT_PLAYER), état déjà capturé par phase. Maintenir deux sources de vérité pour 'le joueur peut-il relancer' invite à des incohérences (canRoll=true alors que phase=TURN_OVER).",
+      "suggestion": "Dériver la possibilité de relancer depuis phase uniquement (ex. canRoll === (phase === 'DECIDING' || phase === 'ROLLING')), ou supprimer canRoll."
+    }
+  ],
+  "overall_assessment": "Plan globalement solide et bien structuré (séparation moteur pur/UI, RNG seedable, déterminisme avant animation), mais le modèle de probabilités contient une erreur mathématique majeure : le double comptage des combinaisons de flanc rend incohérentes les valeurs Bon Flanc, Cochon Nul, Somme et toute l'espérance mathématique dérivée. Plusieurs spécifications critiques manquent (valeurs de points par position, sémantique exacte de Bon Jambon) ou se contredisent entre sections, ce qui bloque l'implémentation de computeScore() et la résolution des cas catastrophe.",
+  "verdict": "REQUEST_CHANGES",
+  "summary": "11 problèmes : 1 erreur de probabilité majeure (double comptage flancs) avec impact en cascade, 4 lacunes/contradictions de spécification, 1 risque de boucle infinie, et plusieurs incohérences de modèle d'état à corriger avant développement."
+}

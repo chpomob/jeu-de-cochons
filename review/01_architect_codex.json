@@ -1,0 +1,77 @@
+{
+  "findings": [
+    {
+      "id": "A1",
+      "severity": "major",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 73,
+      "category": "design",
+      "title": "Flank-side probability model is mathematically inconsistent",
+      "description": "The plan defines Flanc as 35% for a single pig and then lists Bon Flanc and Cochon Nul as 12.25% each. If side is conditional on landing on Flanc, both pigs on a flank is 35% * 35% = 12.25% total, which must be split between same-side and opposite-side outcomes. The current model double-counts flank combinations and will distort scoring, bust frequency, expected value, and game duration.",
+      "suggestion": "Model flank side explicitly inside rollSinglePig(). If DROIT/GAUCHE are equally likely, Bon Flanc and Cochon Nul are each 6.125%. Recompute all derived probabilities, expected values, and tests from the actual distribution rather than maintaining hand-written percentages."
+    },
+    {
+      "id": "A2",
+      "severity": "major",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 83,
+      "category": "design",
+      "title": "Override probabilities break the stated distribution invariants",
+      "description": "Bon Jambon and Cochon à Cheval are described as override events after position rolls, with Jambon evaluated before Cheval. This means the effective Cheval probability is not 0.8% if it is only checked after a failed Jambon roll, and overrides also remove mass from the base position outcomes. The later stated catastrophe probability of 15.55% appears to add the nominal rates directly, which is not equivalent to the described process.",
+      "suggestion": "Define one canonical probability pipeline: either sample from a single normalized outcome table, or formally specify conditional override probabilities and calculate effective probabilities from that. Generate documentation tables from config/tests so the plan and engine cannot diverge."
+    },
+    {
+      "id": "A3",
+      "severity": "major",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 112,
+      "category": "architecture",
+      "title": "State transitions are split across loosely defined functions without a single authority",
+      "description": "The engine exposes applyRoll(), bank(), startTurn(), checkVictory(), nextPlayer(), and isGameOver() as separate operations, but the plan does not define a single reducer or transaction boundary that enforces legal transitions. This risks duplicated checks between UI and engine, invalid sequences such as bank after bust, roll during animation, or nextPlayer without victory evaluation, and makes invariants dependent on call order.",
+      "suggestion": "Make the engine a reducer-style state machine: dispatch domain actions such as ROLL_REQUESTED, ANIMATION_FINISHED, BANK_REQUESTED, START_NEXT_TURN, and return either a new GameState or a typed error. Centralize phase guards and post-transition invariant checks in that reducer."
+    },
+    {
+      "id": "A4",
+      "severity": "major",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 187,
+      "category": "concurrency",
+      "title": "Animation and input flow lack an atomic interaction model",
+      "description": "The plan says the result is determined before animation and that skip is visual only, but integration relies on async promises, button disabling, global keyboard handlers, focus handling, and skip callbacks. Without an explicit in-flight roll token or serialized action queue, stale animation callbacks or repeated inputs can apply an old result, bank twice, or move to the next player after the state has already changed.",
+      "suggestion": "Introduce a single game controller with an action queue and a monotonically increasing rollId/turnId. Animation callbacks must include the token and be ignored if it no longer matches current state. All UI inputs should dispatch through the same controller rather than mutating state directly."
+    },
+    {
+      "id": "A5",
+      "severity": "major",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 209,
+      "category": "design",
+      "title": "Jambon scoring rule contradicts the domain model",
+      "description": "The edge-case table says 'Score négatif (Jambon) -> Math.max(0, score)', while earlier Bon Jambon is defined as an override with score 0 and loss of turn. This introduces an undefined negative-score path that conflicts with the TurnState model and makes it unclear whether Jambon loses only turnScore, totalScore, or both.",
+      "suggestion": "Represent catastrophic outcomes as explicit effects, not numeric scores. For example: { effect: 'LOSE_TURN_POINTS' }, { effect: 'ELIMINATE_PLAYER' }, { effect: 'ADD_POINTS' }. Then totalScore and turnScore updates become unambiguous and testable."
+    },
+    {
+      "id": "A6",
+      "severity": "major",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 13,
+      "category": "security",
+      "title": "User-controlled localStorage data is not covered by a trust boundary",
+      "description": "The plan stores high scores in localStorage and accepts player names, but does not define sanitization, schema validation, or safe rendering requirements. In a SPA this often becomes a stored XSS path if names or high-score entries are later rendered with innerHTML, especially across PWA sessions.",
+      "suggestion": "Treat localStorage as untrusted input. Validate persisted data against a strict schema on load, cap name length, render all user strings through textContent or framework escaping, and add a CSP that blocks inline scripts."
+    },
+    {
+      "id": "A7",
+      "severity": "minor",
+      "file": "/tmp/jeu-cochons-plan.md",
+      "line": 31,
+      "category": "architecture",
+      "title": "Engine claims purity but does not define mutation semantics",
+      "description": "The plan says the core is pure, but functions like applyRoll(gameState), bank(gameState), startTurn(gameState), and nextPlayer(gameState) are named as if they may mutate shared state. If UI and animation hold references to the same objects, accidental mutation will make replay, testing, undo, and async safety harder.",
+      "suggestion": "Specify that engine functions are immutable and return new state plus effects, or explicitly isolate mutation inside one store. Freeze state in tests or use structural copying to catch accidental mutation early."
+    }
+  ],
+  "overall_assessment": "The plan has a strong high-level separation between engine, animation, and UI, but several core invariants are underspecified or internally inconsistent. The largest risk is that probability, scoring, and async state transitions will drift from the intended rules because there is no single canonical model for outcomes or state transitions.",
+  "verdict": "REQUEST_CHANGES",
+  "summary": "0 blockers, 6 majors, 1 minor — architecture is promising, but probability invariants and state-transition authority need rework before implementation."
+}
