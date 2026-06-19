@@ -1,0 +1,12 @@
+{
+  "name": "Jeu de Cochons",
+  "short_name": "Cochons",
+  "start_url": "/jeu-de-cochons/",
+  "display": "standalone",
+  "background_color": "#FFF8F0",
+  "theme_color": "#E87878",
+  "icons": [
+    { "src": "/jeu-de-cochons/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/jeu-de-cochons/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
