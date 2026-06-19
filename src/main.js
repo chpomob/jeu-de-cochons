@@ -5,7 +5,8 @@ import { CONFIG } from './config.js';
 import { createGameController } from './controller.js';
 
 const SERVICE_WORKER_VERSION = packageJson.version;
-const SERVICE_WORKER_URL = `/sw.js?version=${encodeURIComponent(
+const BASE_URL = import.meta.env.BASE_URL;
+const SERVICE_WORKER_URL = `${BASE_URL}sw.js?version=${encodeURIComponent(
   SERVICE_WORKER_VERSION,
 )}`;
 

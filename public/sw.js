@@ -1,18 +1,19 @@
+const BASE_PATH = self.location.pathname.replace(/\/[^/]*$/, '/');
 const CACHE_PREFIX = 'jeu-de-cochons-';
 const CACHE_VERSION =
   new URL(self.location.href).searchParams.get('version') ?? 'dev';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const APP_SHELL_URLS = Object.freeze([
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  BASE_PATH,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}manifest.json`,
+  `${BASE_PATH}icons/icon-192.png`,
+  `${BASE_PATH}icons/icon-512.png`,
 ]);
 const PWA_METADATA_PATHS = new Set([
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  `${BASE_PATH}manifest.json`,
+  `${BASE_PATH}icons/icon-192.png`,
+  `${BASE_PATH}icons/icon-512.png`,
 ]);
 const STATIC_ASSET_DESTINATIONS = new Set([
   'font',
@@ -32,16 +33,19 @@ function normalizeSameOriginPath(url) {
 }
 
 async function discoverBuildAssets() {
-  const response = await fetch('/index.html', { cache: 'no-store' });
+  const response = await fetch(`${BASE_PATH}index.html`, { cache: 'no-store' });
 
   if (!response.ok) {
     throw new TypeError(`Impossible de precacher index.html: HTTP ${response.status}`);
   }
 
   const html = await response.text();
-  const matches = html.matchAll(
-    /(?:src|href)="(\/assets\/[^"]+\.(?:css|js))"/giu,
+  const escapedBase = BASE_PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(
+    `(?:src|href)="${escapedBase}assets\\/[^"]+\\.(?:css|js)"`,
+    'giu',
   );
+  const matches = html.matchAll(pattern);
   return [...matches].map((match) => match[1]);
 }
 
@@ -133,7 +137,7 @@ async function networkFirst(request) {
       return cachedResponse;
     }
 
-    const cachedHome = await matchRuntimeCache('/index.html');
+    const cachedHome = await matchRuntimeCache(`${BASE_PATH}index.html`);
 
     if (cachedHome !== undefined) {
       return cachedHome;
@@ -162,8 +166,8 @@ function shouldUseCacheFirst(request) {
 
   return (
     url.origin === self.location.origin &&
-    (url.pathname.startsWith('/assets/') ||
-      url.pathname.startsWith('/icons/') ||
+    (url.pathname.startsWith(`${BASE_PATH}assets/`) ||
+      url.pathname.startsWith(`${BASE_PATH}icons/`) ||
       STATIC_ASSET_DESTINATIONS.has(request.destination))
   );
 }
@@ -186,7 +190,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   const path = normalizeSameOriginPath(url);
 
-  if (request.mode === 'navigate' || path === '/' || path === '/index.html') {
+  if (request.mode === 'navigate' || path === BASE_PATH || path === `${BASE_PATH}index.html`) {
     event.respondWith(networkFirst(request));
     return;
   }
