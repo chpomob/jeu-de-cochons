@@ -1,5 +1,7 @@
 # Jeu de Cochons
 
+**[Jouer en ligne →](https://chpomob.github.io/jeu-de-cochons/)**
+
 Jeu web inspiré de *Pass the Pigs*: lancez deux cochons, marquez des points selon leurs positions et soyez le premier à atteindre 100 points.
 
 ## Règles du jeu
