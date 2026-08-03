@@ -37,7 +37,7 @@ The duo found **+5 findings over the best single model** (16 vs 11), and — mor
 
 ## The timeline (one apéro)
 
-Everything above happened in a single sitting — the apéritif itself. The repo tells the story in five commits, all from that same day: the plan and the two review reports land first, then the playable build, then the GitHub Pages deployment. The commit for the playable version reads, in part:
+Everything started at the apéritif and finished the next morning — the session log tells the story: dare at 21:12, plan and adversarial review that night, then a quota wall (one of the two subscriptions ran out mid-loop), and I went to bed while the pipeline kept running. A playable build was committed at 01:38; the real finish came in the morning, when the GitHub Pages URL needed one more fix at 10:32 (the classic Vite base-path 404) — so the first people to try the link that morning saw nothing. Five commits across an evening, a night, and a morning. The commit for the playable version reads, in part:
 
 > Moteur de règles complet (push-your-luck, probabilités calibrées) … 73 tests (unitaires + calibration 1M tirages + Playwright E2E) — Build Vite ~16KB gzip. Développé via adversarial dev loop (Codex DEV + Claude Fable 5 REVIEW)
 
@@ -63,7 +63,7 @@ That dispute signal is precious: it tells you exactly which parts of your plan a
 
 More findings ≠ better, if they're noise. The 16 findings were categorized precisely because of that: 3 cross-validated, 6 consensus, 4 partial, 3 disputed. The 13 that survived discussion were real, and the plan (v1.1) was corrected around them — probability model reworked, scoring made explicit, state transitions centralized — **before a single line of game code was written**.
 
-The apéritif game went from dare to playable link before the evening ended — built from a plan that two models shredded, argued about, and rebuilt. That's the "few prompts to code" I actually want: a couple of short exchanges in, a reviewed, correct plan out.
+The apéritif game went from dare to playable build by the end of the night — built from a plan that two models shredded, argued about, and rebuilt. That's the "few prompts to code" I actually want: a couple of short exchanges in, a reviewed, correct plan out.
 
 ---
 
