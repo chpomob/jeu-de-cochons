@@ -12,6 +12,16 @@ My concept was "one-line to code": give an LLM a short prompt, let it plan, let 
 
 Honesty clause #1: it wasn't literally one line. It took a few short exchanges — still almost no hand-holding from me, but I won't pretend it was a single prompt. The pigs are simple, right?
 
+## The prompts (zero engineering)
+
+The prompts were apéro-grade: casual, naive, written in French over drinks — no templates, no role-play framing, no few-shot examples, no chain-of-thought coaxing. Translated from the originals:
+
+1. The spec ask: *"I'd like you to analyze this game… and think about how to turn it into a game. Don't code anything — just analyze the rules and define what would need to be done, in product-definition mode."*
+2. The plan ask: *"I like approach B, detail it, prepare an initial dev plan to get a playable game, bug-free, tested and robust, that reproduces the base game's experience as faithfully as possible… give me that plan so I can have it reviewed. If the review is bad, I'll have a bad image of deepseek pro."* — my entire incentive system, in one sentence.
+3. The review ask: *"Do an adversarial review of this plan, with Codex as the lead and Claude as secondary, with 2 loops."*
+
+That's the whole prompt-engineering budget: zero. No magic incantations — the quality came from the process: two independent models, a gate at every stage, disagreement as a signal. Anyone can type these three prompts.
+
 ## The catch
 
 Pass the Pigs has a famously ambiguous rulebook, and the game is really about *probabilities* — when to bank, when to roll again. The scoring semantics (Bon Jambon, Cochon à Cheval, Pig Out, the "Somme" rules) are exactly where a happy few-lines plan goes to die.
@@ -42,6 +52,12 @@ Everything started at the apéritif and finished the next morning — the sessio
 > Moteur de règles complet (push-your-luck, probabilités calibrées) … 73 tests (unitaires + calibration 1M tirages + Playwright E2E) — Build Vite ~16KB gzip. Développé via adversarial dev loop (Codex DEV + Claude Fable 5 REVIEW)
 
 An apéritif game that fits in 16KB gzipped, tested 73 ways, calibrated against a million simulated rolls — and the project's own commit history credits the adversarial loop. The full review trail (647-line plan, both models' findings, synthesis) is committed right next to the code.
+
+## The full chain (spec → plan → code)
+
+The plan review was one gate in a chain. The session opened with a spec pass — the product-definition analysis of the game's rules (scoring table, the three possible approaches, the four traps of going digital) — and everything downstream ran on it. After the plan was corrected, the code itself went through the same two-model loop, phase by phase (that's what adversarial-code-loop is for). The last phase's review caught two real major bugs the test suite had missed — in fact, the tests were asserting the buggy behavior: player names were HTML-escaped at the wrong layer (a name like `A&B <Bob>` was stored and displayed as `A&amp;B &lt;Bob&gt;`), and the localStorage high-score loader trusted unvalidated names. Both fixed, the tests corrected, all 73 green.
+
+Spec → plan → code: every stage is a gate where two independent models disagree in your place. That's the chaining the skills encode — adversarial-spec drafts the stage, adversarial-plan gates it, adversarial-code-loop keeps the code honest.
 
 ## The three findings both models caught
 
