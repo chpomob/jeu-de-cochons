@@ -16,7 +16,7 @@ Honesty clause #1: it wasn't literally one line. It took a few short exchanges �
 
 The prompts were apéro-grade: casual, naive, written in French over drinks — no templates, no role-play framing, no few-shot examples, no chain-of-thought coaxing. Translated from the originals:
 
-1. The spec ask: *"I'd like you to analyze this game… and think about how to turn it into a game. Don't code anything — just analyze the rules and define what would need to be done, in product-definition mode."*
+1. The spec ask: *"I'd like you to analyze this game — https://fr.wikipedia.org/wiki/Jeu_de_cochons — and think about how to turn it into a game. Don't code anything: just analyze the rules and define what would need to be done, in product-definition mode."* — the entire game description was one Wikipedia link; the model read the rules itself.
 2. The plan ask: *"I like approach B, detail it, prepare an initial dev plan to get a playable game, bug-free, tested and robust, that reproduces the base game's experience as faithfully as possible… give me that plan so I can have it reviewed. If the review is bad, I'll have a bad image of deepseek pro."* — my entire incentive system, in one sentence.
 3. The review ask: *"Do an adversarial review of this plan, with Codex as the lead and Claude as secondary, with 2 loops."*
 
